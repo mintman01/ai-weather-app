@@ -1,12 +1,13 @@
-const BASE_URL = 'https://integrate.api.nvidia.com/v1';
+import OpenAI from 'openai';
+
+const openai = new OpenAI({
+  apiKey: import.meta.env.VITE_NVIDIA_API_KEY,
+  baseURL: 'https://integrate.api.nvidia.com/v1',
+  dangerouslyAllowBrowser: true,
+});
 
 export async function getWeatherAdvice(weather, city) {
-  const apiKey = import.meta.env.VITE_NVIDIA_API_KEY;
-  const systemPrompt = import.meta.env.VITE_NVIDIA_SYSTEM_PROMPT;
-
-  if (!apiKey) {
-    return null;
-  }
+  const model = import.meta.env.VITE_NVIDIA_MODEL || 'deepseek-ai/deepseek-v4-pro';
 
   const current = weather?.current;
   if (!current) return null;
@@ -27,32 +28,22 @@ export async function getWeatherAdvice(weather, city) {
 Будь дружелюбным и полезным.`;
 
   try {
-    const res = await fetch(`${BASE_URL}/models/nvidia/llama-3.1-8b-instruct`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        messages: [
-          { role: 'system', content: systemPrompt || 'Ты полезный погодный ассистент. Отвечай кратко и по делу на русском языке.' },
-          { role: 'user', content: prompt },
-        ],
-        max_tokens: 300,
-        temperature: 0.7,
-        top_p: 0.9,
-      }),
+    const completion = await openai.chat.completions.create({
+      model: model,
+      messages: [
+        { role: 'system', content: import.meta.env.VITE_NVIDIA_SYSTEM_PROMPT || 'Ты полезный погодный ассистент. Отвечай кратко и по делу на русском языке.' },
+        { role: 'user', content: prompt },
+      ],
+      temperature: 1,
+      top_p: 0.95,
+      max_tokens: 16384,
+      chat_template_kwargs: { thinking: false },
+      stream: false,
     });
 
-    if (!res.ok) {
-      console.warn('NVIDIA API error:', res.status);
-      return null;
-    }
-
-    const data = await res.json();
-    return data?.choices?.[0]?.message?.content?.trim();
+    return completion.choices[0]?.message?.content?.trim();
   } catch (err) {
-    console.warn('NVIDIA API error:', err);
+    console.warn('NVIDIA AI error:', err.message);
     return null;
   }
 }
