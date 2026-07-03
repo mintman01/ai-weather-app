@@ -1,0 +1,11 @@
+services:
+  weather-app:
+    build: .
+    ports:
+      - "8080:80"
+    env_file:
+      - .env
+    environment:
+      - NVIDIA_API_KEY=${VITE_NVIDIA_API_KEY}
+      - LLM_BASE_URL=${VITE_LLM_ENDPOINT}
+    restart: unless-stopped

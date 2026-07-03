@@ -1,0 +1,26 @@
+server {
+    listen 80;
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # SPA fallback
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Proxy for LLM API
+    location /api/nvidia/ {
+        proxy_pass ${LLM_BASE_URL}/;
+        proxy_set_header Authorization "Bearer ${NVIDIA_API_KEY}";
+        proxy_set_header Content-Type application/json;
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
+    }
+
+    # Cache static assets
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff2?)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+}
