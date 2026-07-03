@@ -1,6 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { getWeatherAdvice } from '../services/aiService';
 
+function usePrevious(value, initial) {
+  const ref = useRef(initial);
+  useEffect(() => { ref.current = value; }, [value]);
+  return ref.current;
+}
+
 const TypingText = ({ text, speed = 25 }) => {
   const [displayed, setDisplayed] = useState('');
   const [done, setDone] = useState(false);
@@ -35,17 +41,16 @@ const TypingText = ({ text, speed = 25 }) => {
 const AIAssistant = ({ weather, city }) => {
   const [advice, setAdvice] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [visible, setVisible] = useState(false);
-  const [hasShown, setHasShown] = useState(false);
+  const prevWeatherKey = usePrevious(weather, null);
+  const hasFetched = useRef(false);
 
   useEffect(() => {
     if (!weather?.current) return;
 
-    // Delay initial appearance
-    const timer = setTimeout(() => setVisible(true), 1500);
-
-    if (hasShown) return;
-    setHasShown(true);
+    // Only fetch once per weather data
+    const weatherKey = `${weather.current.temperature_2m}-${weather.current.weather_code}`;
+    if (hasFetched.current && prevWeatherKey === weatherKey) return;
+    hasFetched.current = true;
 
     // Fetch advice after delay
     const fetchTimer = setTimeout(async () => {
@@ -56,25 +61,14 @@ const AIAssistant = ({ weather, city }) => {
     }, 3000);
 
     return () => {
-      clearTimeout(timer);
       clearTimeout(fetchTimer);
     };
-  }, [weather, city, hasShown]);
+  }, [weather, city, prevWeatherKey]);
 
-  const handleDismiss = () => {
-    setVisible(false);
-  };
-
-  if (!visible && !loading) return null;
+  if (!weather?.current && !loading) return null;
 
   return (
-    <div className={`ai-assistant ${visible ? 'ai-assistant-visible' : ''}`}>
-      <button className="ai-dismiss" onClick={handleDismiss} title="Закрыть">
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-          <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        </svg>
-      </button>
-
+    <div className="ai-assistant">
       <div className="ai-icon">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
           <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />

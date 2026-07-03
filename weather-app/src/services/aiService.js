@@ -1,13 +1,12 @@
-import OpenAI from 'openai';
-
-const openai = new OpenAI({
-  apiKey: import.meta.env.VITE_NVIDIA_API_KEY,
-  baseURL: 'https://integrate.api.nvidia.com/v1',
-  dangerouslyAllowBrowser: true,
-});
-
 export async function getWeatherAdvice(weather, city) {
-  const model = import.meta.env.VITE_NVIDIA_MODEL || 'deepseek-ai/deepseek-v4-pro';
+  const apiKey = import.meta.env.VITE_NVIDIA_API_KEY;
+  const model = import.meta.env.VITE_NVIDIA_MODEL;
+  const systemPrompt = import.meta.env.VITE_NVIDIA_SYSTEM_PROMPT;
+
+  if (!apiKey) {
+    console.warn('⚠️ LLM API key not set');
+    return null;
+  }
 
   const current = weather?.current;
   if (!current) return null;
@@ -28,22 +27,39 @@ export async function getWeatherAdvice(weather, city) {
 Будь дружелюбным и полезным.`;
 
   try {
-    const completion = await openai.chat.completions.create({
-      model: model,
-      messages: [
-        { role: 'system', content: import.meta.env.VITE_NVIDIA_SYSTEM_PROMPT || 'Ты полезный погодный ассистент. Отвечай кратко и по делу на русском языке.' },
-        { role: 'user', content: prompt },
-      ],
-      temperature: 1,
-      top_p: 0.95,
-      max_tokens: 16384,
-      chat_template_kwargs: { thinking: false },
-      stream: false,
+    console.log('🤖 Calling LLM:', model);
+    const res = await fetch('/api/nvidia/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: model,
+        messages: [
+          { role: 'system', content: systemPrompt || 'Ты полезный погодный ассистент. Отвечай кратко и по делу на русском языке.' },
+          { role: 'user', content: prompt },
+        ],
+        temperature: 1,
+        top_p: 0.95,
+        max_tokens: 16384,
+        chat_template_kwargs: { thinking: false },
+        stream: false,
+      }),
     });
 
-    return completion.choices[0]?.message?.content?.trim();
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error('❌ LLM API error:', res.status, errorText);
+      return null;
+    }
+
+    const data = await res.json();
+    const content = data?.choices?.[0]?.message?.content?.trim();
+    console.log('✅ LLM response:', content?.substring(0, 100));
+    return content;
   } catch (err) {
-    console.warn('NVIDIA AI error:', err.message);
+    console.error('❌ LLM fetch error:', err.message);
     return null;
   }
 }
