@@ -11,8 +11,9 @@ server {
 
     # Proxy for LLM API
     location /api/nvidia/ {
-        proxy_pass ${LLM_BASE_URL}/;
-        proxy_set_header Authorization "Bearer ${NVIDIA_API_KEY}";
+        rewrite ^/api/nvidia/(.*)$ /$1 break;
+        proxy_pass ${VITE_LLM_ENDPOINT};
+        proxy_set_header Authorization "Bearer ${VITE_NVIDIA_API_KEY}";
         proxy_set_header Content-Type application/json;
         proxy_read_timeout 300s;
         proxy_send_timeout 300s;
