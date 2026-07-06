@@ -1,5 +1,5 @@
-const GEOCODING_URL = 'https://geocoding-api.open-meteo.com/v1/search';
-const WEATHER_URL = 'https://api.open-meteo.com/v1/forecast';
+const GEOCODING_URL = '/api/geocoding/v1/search';
+const WEATHER_URL = '/api/weather/v1/forecast';
 
 export async function searchCities(query) {
   const params = new URLSearchParams({

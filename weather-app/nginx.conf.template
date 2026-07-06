@@ -9,6 +9,19 @@ server {
         try_files $uri $uri/ /index.html;
     }
 
+    # Proxy for Open-Meteo API (CORS)
+    location /api/weather/ {
+        proxy_pass https://api.open-meteo.com/;
+        proxy_set_header Host api.open-meteo.com;
+        proxy_set_header Accept-Encoding "";
+    }
+
+    # Proxy for Open-Meteo Geocoding API (CORS)
+    location /api/geocoding/ {
+        proxy_pass https://geocoding-api.open-meteo.com/;
+        proxy_set_header Host geocoding-api.open-meteo.com;
+    }
+
     # Proxy for LLM API
     location /api/nvidia/ {
         rewrite ^/api/nvidia/(.*)$ /$1 break;

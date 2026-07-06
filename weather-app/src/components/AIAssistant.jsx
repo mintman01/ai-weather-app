@@ -41,6 +41,7 @@ const TypingText = ({ text, speed = 25 }) => {
 const AIAssistant = ({ weather, city }) => {
   const [advice, setAdvice] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const prevWeatherKey = usePrevious(weather, null);
   const hasFetched = useRef(false);
 
@@ -55,8 +56,14 @@ const AIAssistant = ({ weather, city }) => {
     // Fetch advice after delay
     const fetchTimer = setTimeout(async () => {
       setLoading(true);
+      setError(null);
       const result = await getWeatherAdvice(weather, city);
-      setAdvice(result);
+      if (result && typeof result === 'object' && result.error) {
+        setError(result.message);
+        setAdvice(null);
+      } else {
+        setAdvice(result);
+      }
       setLoading(false);
     }, 3000);
 
@@ -83,6 +90,10 @@ const AIAssistant = ({ weather, city }) => {
             </div>
             <span>Анализирую погоду...</span>
           </div>
+        ) : error ? (
+          <span style={{ opacity: 0.7, fontSize: 13, color: '#ff6b6b' }}>
+            ⚠️ {error}
+          </span>
         ) : advice ? (
           <TypingText text={advice} speed={20} />
         ) : (

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useMemo } from 'react';
 
 const WeatherCanvas = ({ weatherCode, temperature, opacity = 1 }) => {
   const canvasRef = useRef(null);
@@ -86,13 +86,21 @@ const WeatherCanvas = ({ weatherCode, temperature, opacity = 1 }) => {
     let animFrame;
 
     const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      initParticles(canvas.width, canvas.height);
+      const w = canvas.clientWidth || window.innerWidth;
+      const h = canvas.clientHeight || window.innerHeight;
+      canvas.width = w;
+      canvas.height = h;
+      initParticles(w, h);
     };
 
     resize();
-    window.addEventListener('resize', resize);
+
+    const onResize = () => resize();
+    window.addEventListener('resize', onResize);
+
+    // Observe canvas size changes (from container resizing)
+    const ro = new ResizeObserver(onResize);
+    ro.observe(canvas);
 
     const getGradient = (code) => {
       if ([61, 63, 65, 80, 81, 82].includes(code)) {
@@ -327,7 +335,8 @@ const WeatherCanvas = ({ weatherCode, temperature, opacity = 1 }) => {
     draw();
 
     return () => {
-      window.removeEventListener('resize', resize);
+      window.removeEventListener('resize', onResize);
+      ro.disconnect();
       cancelAnimationFrame(animFrame);
     };
   }, [weatherCode, temperature, opacity, initParticles]);
@@ -336,7 +345,7 @@ const WeatherCanvas = ({ weatherCode, temperature, opacity = 1 }) => {
     <canvas
       ref={canvasRef}
       style={{
-        position: 'fixed',
+        position: 'absolute',
         top: 0,
         left: 0,
         width: '100%',

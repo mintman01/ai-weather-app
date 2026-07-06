@@ -5,7 +5,7 @@ export async function getWeatherAdvice(weather, city) {
 
   if (!apiKey) {
     console.warn('⚠️ LLM API key not set');
-    return null;
+    return { error: true, message: 'API-ключ не найден. Проверьте .env файл' };
   }
 
   const current = weather?.current;
@@ -51,7 +51,7 @@ export async function getWeatherAdvice(weather, city) {
     if (!res.ok) {
       const errorText = await res.text();
       console.error('❌ LLM API error:', res.status, errorText);
-      return null;
+      return { error: true, message: `API error: ${res.status} ${errorText || 'Unknown error'}` };
     }
 
     const data = await res.json();
@@ -60,7 +60,7 @@ export async function getWeatherAdvice(weather, city) {
     return content;
   } catch (err) {
     console.error('❌ LLM fetch error:', err.message);
-    return null;
+    return { error: true, message: `Network error: ${err.message}` };
   }
 }
 

@@ -12,6 +12,7 @@ html, body, #root {
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   overflow-x: hidden;
+  background: linear-gradient(to bottom, #4facfe 0%, #00f2fe 50%, #87ceeb 100%);
 }
 
 ::-webkit-scrollbar {

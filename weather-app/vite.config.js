@@ -22,8 +22,18 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
+      '/api/weather': {
+        target: 'https://api.open-meteo.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/weather/, ''),
+      },
+      '/api/geocoding': {
+        target: 'https://geocoding-api.open-meteo.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/geocoding/, ''),
+      },
       '/api/nvidia': {
-        target: readEnvVar('VITE_LLM_ENDPOINT') || 'https://integrate.api.nvidia.com',
+        target: readEnvVar('VITE_LLM_ENDPOINT')?.replace(/\/v1\/chat\/completions$/, '') || 'https://integrate.api.nvidia.com',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/nvidia/, ''),
         configure: (proxy) => {
